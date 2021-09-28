@@ -1,12 +1,14 @@
 const {gql} = require('apollo-server-express');
-const db = require('../models');
-// const getAllUsersNotes = require('../datasources/notes');
 
 const typeDefs = gql`
     type Note{
         note_id: Int!
         content: String!
         status: String!
+    }
+    
+    type Notes{
+        notes: [Note]
     }
 
     type User{
@@ -19,53 +21,90 @@ const typeDefs = gql`
 
     type UsersNotes{
         id: Int!
-        user: User!
-        notes_id: [Note]
-    }
-
-    type UserAuth {
-        token: String
-    }
-
-    type UserActionResponse{
-        success: Boolean  
-        message: String   
-    }
-
-    type NoteUpdateResponse{
-        success: Boolean  
-        message: String   
-        userNotes: [UsersNotes]  
+        user_id: Int!
+        notes_id: Int!
     }
 
     type Query{
-        hello: String
-        listNotes(user_id: Int): UsersNotes
-        viewNotes(note_id: Int): Note
+        checkNotes: Note
+        listNotes(userId: Int): [UsersNotes]
+        viewNotes(noteId: Int): [Note]
+
+        getDetails(userId: Int!): [User]
     }
 
-    type Mutation {
-        register(name: String!, email: String!, passowrd: String!): UserAuth
-        login(email: String!, password: String!): UserAuth
-        
-        addNotes(user_id: Int): NoteUpdateResponse
-        editNotes(note_id: Int!, content: String!): NoteUpdateResponse
-        deleteNotes(note_id: Int): NoteUpdateResponse
+    type Mutation {        
+        addNotes(userId: Int!, content: String!): String
+        editNotes(noteId: Int!, content: String!): String
+        deleteNotes(noteId: Int!): String  # parameters must be the same as below one
+
+        register(userName: String!, userEmail: String!, userPassword: String!): String
+        login(userEmail: String!, userPassword: String!): String
+        editUser(userEmail: String!, userNewPassword: String!): String
+        deleteUser(userId: Int!):String
     }
 `;
 
+// schema response is an object
+
+// schema, resolvers parameter always the same
+
 const resolvers = {
     Query:{
-        hello: () => "Hello",
-        listNotes: async (user_id) => {
-            return await dataSources.NotesAPI.getAllNotes();
+        // Note API
+        listNotes: async (_, { userId }, { dataSources }) => {
+            const returnData = await dataSources.notesAPI.getAllNotesById(userId);
+            return returnData;
         },
-        // listNotes: async (user_id) => {
-        //     return (listNotes = await db.user_notes.findAll());
-        // },
-        // listNotes: async (root, { id }, { models: { user_notes } }) => user_notes.findAll(),
-        // listNotes: (_, { id }, { dataSources }) =>
-        //     dataSources.notesAPI.getNotesById({ user_id: id }),
+
+        viewNotes: async (_, { noteId }, { dataSources }) =>{  
+            const returnData = await dataSources.notesAPI.getNoteById(noteId)
+            return returnData;
+        },
+
+        // User API
+        getDetails: async (_, { userId }, { dataSources }) =>{  
+            const returnData = await dataSources.userAPI.getNoteById(userId)
+            return returnData;
+        },
+    },
+    Mutation:{
+        // Note API
+        addNotes:(_, { userId, content }, { dataSources }) =>{
+            const returnData =  dataSources.notesAPI.addNewNote(userId, content);
+            return returnData;
+        },
+
+        editNotes:(_, { noteId, content }, { dataSources }) =>{
+            const returnData = dataSources.notesAPI.updateNoteContent(noteId, content);
+            return returnData;
+        },
+
+        deleteNotes:(_, { noteId }, { dataSources }) =>{
+            const returnData = dataSources.notesAPI.deleteNote(noteId)
+            return returnData;
+        },
+
+        // User API
+        register:(_, { userName, userEmail, userPassword }, { dataSources }) =>{
+            const returnData =  dataSources.userAPI.addNewUser(userName, userEmail, userPassword);
+            return returnData;
+        },
+
+        login:(_, { userEmail, userPassword }, { dataSources }) =>{
+            const returnData =  dataSources.userAPI.loginUser(userEmail, userPassword);
+            return returnData;
+        },
+
+        editUser:(_, { userEmail, userNewPassword }, { dataSources }) =>{
+            const returnData =  dataSources.userAPI.editUser(userEmail, userNewPassword);
+            return returnData;
+        },
+
+        deleteUser:(_, { userId }, { dataSources }) =>{
+            const returnData = dataSources.userAPI.deleteUser(userId)
+            return returnData;
+        },
     }        
 }
 

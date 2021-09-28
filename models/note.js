@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
     const {INTEGER, STRING, DATE} = DataTypes
-    let notes = sequelize.define('notes', {
+    let Notes = sequelize.define('notes', {
         note_id:{
             type: INTEGER,
             primaryKey: true,
@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         updated_at: {
             type: DATE,
-            allowNull: false,
+            allowNull: true,
         },
         status: {
             type: STRING,
@@ -32,5 +32,5 @@ module.exports = (sequelize, DataTypes) => {
     //     notes.hasMany(models.user_notes);
     // }
 
-    return notes;
+    return Notes;
 };

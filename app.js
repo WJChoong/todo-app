@@ -1,17 +1,13 @@
 const express = require("express");
-const { graphqlHTTP } = require("express-graphql");
 const { ApolloServer} = require('apollo-server-express');
 const db = require("./models");
 const {typeDefs, resolvers} = require('./graphql');
 const NotesAPI = require('./datasources/notes');
+const UserAPI = require('./datasources/user');
 
 const port = 5000;
 const app = express();
 app.use(express.json());
-// app.use('/graphql', graphqlHTTP({
-//     schema, 
-//     graphql: true
-// }))
 
 db.sequelize.sync()
     .then(() => {
@@ -23,7 +19,8 @@ const server = new ApolloServer({
     typeDefs,
     resolvers,
     dataSources: () => ({
-        noteAPI: new NotesAPI
+        notesAPI: new NotesAPI(),
+        userAPI: new UserAPI()
     }),
 });
 

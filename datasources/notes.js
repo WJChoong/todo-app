@@ -1,21 +1,15 @@
 const { DataSource } = require('apollo-datasource');
-const user_notes = require('../models/user_notes');
-const notes = require('../models/note');
-const db = require('../config/config');
-const note = require('../models/note');
-const Sequelize =  require("sequelize");
-const config = require('../config/config');
-// const isEmail = require('isemail');
+const {notes, user_notes, users} = require('../models');
 
 class NotesAPI extends DataSource {
-    constructor() {
-        super();
-        const sequelize = new Sequelize(config.db.database, config.db.username, config.db.password, {
-            dialect: 'mysql',
-            host: config.db.host,
-        });
-        this.database = sequelize
-    }
+    // constructor() {
+    //     super();
+    //     const sequelize = new Sequelize(config.db.database, config.db.username, config.db.password, {
+    //         dialect: 'mysql',
+    //         host: config.db.host,
+    //     });
+    //     this.database = sequelize
+    // }
 
     initialize(config) {
         this.context = config.context;
@@ -23,41 +17,87 @@ class NotesAPI extends DataSource {
 
     notesReducer(notes) {
         return {
-            note_id: notes.note_id || 0,
+            note_id: notes.note_id,
             content: notes.content,
-            deleted_at: notes.deleted_at,
-            updated_at: notes.updated_at,
             status: notes.status,
-            created_at: note.created_at,
         };
     }
 
     async getAllNotes() {
-        const response = await this.get(notes);
-        return Array.isArray(response)
-            ? response.map(note => this.notesReducer(note))
-            : [];
+        const response = await notes.findAll(); //[{}{}]
+        return response;
     }
-    
-    // async getAllNotes(){
-    //     const response = await db.user_notes.findAll();
-    //     return this.notesReducer(response[0]);
-    // }
 
-    async getNotesById({ userId }) {
-        const response = await this.get('user_notes', { userId });
-        return this.notesReducer(response[0]);
+    // get all notes of a user
+    async getAllNotesById(userId) {
+        console.log(userId)
+        const { rows } = await user_notes.findAndCountAll({
+            where: {
+              "user_id": userId
+            },
+          });
+        return rows;
+    }
+
+    // Get specific notes 
+    async getNoteById(note_id) {
+        const { rows } = await notes.findAndCountAll({
+            where: {
+              "note_id": note_id
+            },
+          });
+          console.log(rows);
+        return rows;
+    }
+
+    async addNewNote(userId, content) {
+
+        const note = await notes.create({ 
+            content: content,
+            status: "A"
+         });
+        console.log("Note ID is:", note.note_id);
+        const user_note = await user_notes.create({ 
+            user_id: userId,
+            notes_id: note.note_id
+        });
+        console.log(user_note);
+        if (user_note){
+            return "Notes is saved";
+        }
+        return "Failed to save notes";
+        
+    }
+
+    // update notes
+    async updateNoteContent(noteId, content) {
+        let message = "";
+        console.log("Note ID: ", noteId);
+        console.log("Content", content);
+        const updates = notes.update(
+            { content: content },
+            { where: {note_id: noteId} }
+        )
+        if (updates){
+            return "Successfully updated";
+
+        };
+        return "Failed to update";
+    }
+
+    // delete the Note
+    async deleteNote(noteId) {
+        console.log("ID:", noteId);
+        let message = "";
+        // this will only update the deleted_at
+        const deleteNotes = notes.findOne({where: {note_id: noteId}}).then(function(note){
+            note.destroy();
+        });
+        if (deleteNotes){
+            return "Successfully deleted the note";
+        }
+        return "Failed to delete the notes";
     }
 }
 
 module.exports = NotesAPI;
-
-// const { GraphQLList } = require("graphql");
-// const db = require('../models');
-// const { user_notes } =require('../models/user_notes');
-
-// module.exports = getAllUsersNotes = {
-//     resolve: () => {
-//         return user_notes.findAll();
-//     }
-// }

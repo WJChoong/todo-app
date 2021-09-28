@@ -3,9 +3,11 @@ module.exports = function (sequelize, Sequelize) {
     let user_notes = sequelize.define('user_notes', {
         user_id: {
             type: INTEGER,
+            allowNull: false,
         },
         notes_id: {
             type: INTEGER,
+            allowNull: false,
         },
     }, {
         underscored: true,

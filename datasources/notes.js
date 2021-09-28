@@ -1,5 +1,5 @@
 const { DataSource } = require('apollo-datasource');
-const {notes, user_notes, users} = require('../models');
+const {notes, user_notes, users, sequelize} = require('../models');
 
 class NotesAPI extends DataSource {
     // constructor() {
@@ -52,28 +52,35 @@ class NotesAPI extends DataSource {
 
     async addNewNote(userId, content) {
 
-        const note = await notes.create({ 
-            content: content,
-            status: "A"
-         });
-        console.log("Note ID is:", note.note_id);
-        const user_note = await user_notes.create({ 
-            user_id: userId,
-            notes_id: note.note_id
-        });
-        console.log(user_note);
-        if (user_note){
-            return "Notes is saved";
-        }
-        return "Failed to save notes";
-        
+        try{
+
+            // const t = await sequelize.transaction();
+
+            const result = await sequelize.transaction(async (t) => {
+                const note = await notes.create({ 
+                    content: content,
+                    status: "A"
+                }, {transaction: t});
+                console.log("Note ID is:", note.note_id);
+    
+                const user_note = await user_notes.create({ 
+                    user_id: userId,
+                    notes_id: note.note_id
+                }, {transaction: t});
+                console.log(user_note);
+                return "Notes is saved";
+            }); //check
+
+        }catch(error){
+
+            console.log("Error: ", error);
+            return "Failed to save notes";
+
+        }        
     }
 
     // update notes
     async updateNoteContent(noteId, content) {
-        let message = "";
-        console.log("Note ID: ", noteId);
-        console.log("Content", content);
         const updates = notes.update(
             { content: content },
             { where: {note_id: noteId} }

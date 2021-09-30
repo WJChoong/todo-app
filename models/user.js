@@ -1,32 +1,5 @@
-// const UserModel = (sequelize, Sequelize) => {
-//     const {INTEGER, STRING, DATE} = Sequelize
-//     const Users = sequelize.define('users',{
-//         user_id: {
-//             type: INTEGER,
-//             primaryKey: true,
-//             autoIncrement: true,
-//         },
-//         email: {
-//             type: STRING,
-//             allowNull: false,
-//         },
-//         update_at: {
-//             type: DATE,
-//             allowNull: false,
-//         },
-//         created_at: {
-//             type: DATE,
-//             allowNull: false,
-//         },
-//         status: {
-//             type: STRING,
-//             allowNull: false,
-//         },
-//     })
-//     return Users;
-// }
-//
-// module.exports = UserModel
+// const Notes = require("./note");
+// const user_notes = require("./user_notes");
 
 module.exports = function (sequelize, Sequelize) {
     const {INTEGER, STRING, DATE} = Sequelize
@@ -60,14 +33,21 @@ module.exports = function (sequelize, Sequelize) {
             type: STRING,
             allowNull: false,
         },
+        // associate:(models) => {
+            
+        // }
+
     }, {
         underscored: true,
         // tableName: 'users'
     });
-    //
-    // User.associate = (models) => {
-    //     User.hasMany(models.user_notes)
-    // }
+    
+    User.associate = (models) => {
+        User.belongsToMany(models.notes, {
+            through: models.user_notes
+        });
+        User.hasMany(models.user_notes);
+    }
 
     return User;
 };

@@ -6,10 +6,6 @@ const typeDefs = gql`
         content: String!
         status: String!
     }
-    
-    type Notes{
-        notes: [Note]
-    }
 
     type User{
         user_id: Int!
@@ -25,12 +21,19 @@ const typeDefs = gql`
         notes_id: Int!
     }
 
+    type UserNotesDetails{
+        user: User
+        notes: [Note]
+    }
+
     type Query{
         checkNotes: Note
         listNotes(userId: Int): [UsersNotes]
         viewNotes(noteId: Int): [Note]
 
         getDetails(userId: Int!): [User]
+        getAllOfUser(userId: Int!): UserNotesDetails
+        # getAllOfUser(userId: Int!): String
     }
 
     type Mutation {        
@@ -63,8 +66,13 @@ const resolvers = {
         },
 
         // User API
-        getDetails: async (_, { userId }, { dataSources }) =>{  
-            const returnData = await dataSources.userAPI.getNoteById(userId)
+        // getDetails: async (_, { userId }, { dataSources }) =>{  
+        //     const returnData = await dataSources.userAPI.getNoteById(userId)
+        //     return returnData;
+        // },
+
+        getAllOfUser: async (_, { userId }, { dataSources }) =>{  
+            const returnData = dataSources.notesAPI.getAllNotes(userId);
             return returnData;
         },
     },

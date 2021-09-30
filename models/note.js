@@ -1,3 +1,6 @@
+const User = require("./user");
+const user_notes = require("./user_notes");
+
 module.exports = (sequelize, DataTypes) => {
     const {INTEGER, STRING, DATE} = DataTypes
     let Notes = sequelize.define('notes', {
@@ -28,9 +31,14 @@ module.exports = (sequelize, DataTypes) => {
         tableName: 'notes'
     });
 
-    // notes.associate = (models) => {
-    //     notes.hasMany(models.user_notes);
-    // }
+    Notes.associate = (models) => {
+        // console.log(models);
+        // Notes.hasMany(models.users);
+        Notes.belongsToMany(
+            models.users, {
+            through: models.user_notes
+        })
+    };
 
     return Notes;
 };

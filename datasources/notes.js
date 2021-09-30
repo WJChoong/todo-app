@@ -1,5 +1,7 @@
 const { DataSource } = require('apollo-datasource');
+const { UserInputError } = require('apollo-server-errors');
 const {notes, user_notes, users, sequelize} = require('../models');
+const user = require('../models/user');
 
 class NotesAPI extends DataSource {
     // constructor() {
@@ -15,17 +17,36 @@ class NotesAPI extends DataSource {
         this.context = config.context;
     }
 
-    notesReducer(notes) {
-        return {
-            note_id: notes.note_id,
-            content: notes.content,
-            status: notes.status,
-        };
-    }
+    async getAllNotes(userId) {
+        console.log(userId)
+        
+        const userDetails = await users.findOne({
+            include: [
+                {
+                    model: user_notes,
+                },
+                {
+                    model: notes,
+                    // as: "note_id"
+                }
+            ],
+            where: {
+                "user_id": userId
+            },
+        });
+        const returnUserDetails = {
+            user: {
+                user_id: userDetails.dataValues.user_id,
+                name: userDetails.dataValues.name,
+                email: userDetails.dataValues.email,
+                password: userDetails.dataValues.password,
+                status: userDetails.dataValues.status,
+            },
+            notes: userDetails.notes
+        }
+        console.log(returnUserDetails);
 
-    async getAllNotes() {
-        const response = await notes.findAll(); //[{}{}]
-        return response;
+        return returnUserDetails;
     }
 
     // get all notes of a user
@@ -33,7 +54,7 @@ class NotesAPI extends DataSource {
         console.log(userId)
         const { rows } = await user_notes.findAndCountAll({
             where: {
-              "user_id": userId
+              "user_user_id": userId
             },
           });
         return rows;
@@ -41,12 +62,13 @@ class NotesAPI extends DataSource {
 
     // Get specific notes 
     async getNoteById(note_id) {
+        console.log("2");
         const { rows } = await notes.findAndCountAll({
             where: {
               "note_id": note_id
             },
-          });
-          console.log(rows);
+        });
+        console.log(rows);
         return rows;
     }
 
@@ -56,20 +78,20 @@ class NotesAPI extends DataSource {
 
             // const t = await sequelize.transaction();
 
-            const result = await sequelize.transaction(async (t) => {
+            await sequelize.transaction(async (t) => {
                 const note = await notes.create({ 
                     content: content,
                     status: "A"
                 }, {transaction: t});
                 console.log("Note ID is:", note.note_id);
-    
+                console.log("UserID:", userId);
                 const user_note = await user_notes.create({ 
-                    user_id: userId,
-                    notes_id: note.note_id
+                    noteNoteId: note.note_id,
+                    userUserId: userId,
                 }, {transaction: t});
-                console.log(user_note);
-                return "Notes is saved";
+                console.log(user_note);  
             }); //check
+            return "Notes is saved";
 
         }catch(error){
 
@@ -95,7 +117,6 @@ class NotesAPI extends DataSource {
     // delete the Note
     async deleteNote(noteId) {
         console.log("ID:", noteId);
-        let message = "";
         // this will only update the deleted_at
         const deleteNotes = notes.findOne({where: {note_id: noteId}}).then(function(note){
             note.destroy();

@@ -5,6 +5,9 @@ const Sequelize =  require("sequelize");
 const basename = path.basename(__filename);
 const config = require('../config/config');
 const db = {};
+const User = require('./user');
+const Notes = require('./note');
+const user_notes = require('./user_notes');
 
 console.log(config);
 
@@ -24,6 +27,7 @@ fs
         db[model.name] = model;
     });
 
+// passing in the association
 Object.keys(db).forEach(modelName => {
     if (db[modelName].associate){
         db[modelName].associate(db)
